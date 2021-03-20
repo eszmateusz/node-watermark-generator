@@ -1,5 +1,6 @@
 const Jimp = require('jimp');
 const inquirer = require('inquirer');
+const fs = require('fs');
 
 const addTextWatermarkToImage = async function(inputFile, outputFile, text) {
   const image = await Jimp.read(inputFile);
@@ -38,10 +39,10 @@ const startApp = async () => {
 
   // Ask if user is ready
   const answer = await inquirer.prompt([{
-      name: 'start',
-      message: 'Hi! Welcome to "Watermark manager". Copy your image files to `/img` folder. Then you\'ll be able to use them in the app. Are you ready?',
-      type: 'confirm'
-    }]);
+    name: 'start',
+    message: 'Hi! Welcome to "Watermark manager". Copy your image files to `/img` folder. Then you\'ll be able to use them in the app. Are you ready?',
+    type: 'confirm'
+  }]);
 
   // if answer is no, just quit the app
   if(!answer.start) process.exit();
@@ -64,20 +65,44 @@ const startApp = async () => {
       type: 'input',
       message: 'Type your watermark text:',
     }]);
+
     options.watermarkText = text.value;
-    addTextWatermarkToImage('./img/' + options.inputImage, './img/' + prepareOutputFilename(options.inputImage), options.watermarkText);
-  }
-  else {
+    //addTextWatermarkToImage('./img/' + options.inputImage, './img/' + prepareOutputFilename(options.inputImage), options.watermarkText);
+    if(fs.existsSync('./img/' + options.inputImage)) {
+      addTextWatermarkToImage(
+        './img/' + options.inputImage, 
+        './img/' + prepareOutputFilename(options.inputImage), 
+        options.watermarkText
+      );
+      console.log('Good job! Chceck your file.');
+      startApp();
+    } else {
+      console.log('Ups! Something went wrong, try again.');
+    }
+  } else {
     const image = await inquirer.prompt([{
       name: 'filename',
       type: 'input',
       message: 'Type your watermark name:',
       default: 'logo.png',
-    }])
-    options.watermarkImage = image.filename;
-    addImageWatermarkToImage('./img/' + options.inputImage, './img/' + prepareOutputFilename(options.inputImage), './img/' + options.watermarkImage);
-  }
+    }]);
 
-}
+    options.watermarkImage = image.filename;
+    //addImageWatermarkToImage('./img/' + options.inputImage, './img/' + prepareOutputFilename(options.inputImage), './img/' + options.watermarkImage);
+    if(fs.existsSync('./img/' + options.inputImage) &&
+      (fs.existsSync('./img/' + options.watermarkImage))
+    ) {
+      addImageWatermarkToImage(
+        './img/' + options.inputImage,
+        './img/' + prepareOutputFilename(options.inputImage),
+        './img/' + options.watermarkImage
+      );
+      console.log('Good job! Chceck your file.');
+      startApp();
+    } else {
+      console.log('Ups! Something went wrong, try again.');
+    }
+  }
+};
 
 startApp();
